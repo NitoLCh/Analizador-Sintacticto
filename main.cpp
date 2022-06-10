@@ -45,7 +45,6 @@ char pilac[MAX][10];
 void generararch();
 void vabrirarch();
 int  bytesarch();
-
 void vanalisislexico();
 void vanalisis_sintactico();
 void viniedos();
@@ -65,8 +64,8 @@ int estoken(char x[]);
 bool finarch = false;
 FILE *Fd;
 
-char token[15][8] = {"x",";",",","*","Id","[","]","Num","char","int","float","puts","(",")","Cte.Lit"};
-//                        1   2   3   4    5   6    7     8      9     10      11    12  13     14
+char token[18][8] = {"x",";",",","*","Id","[","]","Num","char","int","float","puts","(",")","Cte.Lit", "="};
+//                        1   2   3   4    5   6    7     8      9     10      11    12  13     14     15
 
 //TERMINALES
 char varsint[13][3]={"x","D","L","L'","I","I'","A","A'","K","T","F","E","P"};
@@ -86,51 +85,48 @@ int tablaM[25][8]= {{1, 8 , 1, 9, 2, -1, 999,999},  // D con char = D -> TL;
                     {1, 9 , 1, 9, 2, -1, 999,999},  // D con int = D -> TL;
                     {1, 10, 1, 9, 2, -1, 999,999},  // D con float = D -> TL;
 
-                    {2, 3 , 2, 4, 3, 999, 999, 999}, //L con * = L -> IL' | λ
-                    {2, 4 , 2, 4, 3, 999, 999, 999}, //L con ID = L -> IL' | λ
+                    {2, 3 , 2, 4, 3, 999, 999, 999}, //L con * = L -> IL'
+                    {2, 4 , 2, 4, 3, 999, 999, 999}, //L con ID = L -> IL'
 
 
         /* 5 */     {3, 1 , 3, 999,999,999,999,999}, //L' con ; = L' -> λ
                     {3, 2 , 3, -2, 4, 3, 999,999},   //L' con , = L' -> ,IL'
 
                     {4, 3, 4, -3, -4, 5, 999,999},   //I con * = I -> *IDI'
-                    {4, 4, 4, -4, 5, 999,999,999},   //I con ID = I -> IDI'|λ
+                    {4, 4, 4, -4, 5, 999,999,999},   //I con ID = I -> IDI'
 
-                    {5, 1, 5, 999,999,999,999,999},  //I' con ; = I' -> λ
+                    {5, 1, 5,999,999,999,999,999},  //I' con ; = I' -> λ
         /* 10 */    {5, 2, 5,999,999,999,999,999},   //I' con , = I' -> λ
-                    {5, 5, 5, 6, 999,999,999,999},   //I' con [ = I' -> A | λ
+                    {5, 5, 5, 6, 999,999,999,999},   //I' con [ = I' -> A
 
-                    {6, 5, 6, -5, 8,-6, 7, 999 },
+                    {6, 5, 6, -5, 8,-6, 7, 999 },    //A con [ = A -> [K]A'
 
-                    {7, 1, 7, 999,999,999,999,999},
-                    {7, 2, 7, 999,999,999,999,999},
-        /* 15 */    {7, 5, 6, -5, 8, -6, 7, 999},
+                    {7, 1,7,999,999,999,999,999},  //A' con ; = A' -> λ
+                    {7, 2,7,999,999,999,999,999},  //A' con , = A' -> λ
+        /* 15 */    //{7, 5, 6, -5, 8, -6, 7, 999},  //A' con [ = A -> [K]A' *ERROR*
 
-                    {8, 4, 8, -4, 999, 999,999,999},
-                    {8, 7, 8, -7, 999,999,999,999},
+                    {8, 4, 8, -4, 999, 999,999,999}, //K con ID = K -> ID
+                    {8, 7, 8, -7, 999,999,999,999},  //K con Num = K -> Num
 
-                    {9, 8, 9, -8,999,999,999,999},
-         /* -> */   {9, 9, 9, -9,999,999,999,999},
-        /* 20 */    {9,10,9,-10,999,999,999,999},
+                    {9, 8, 9, -8, 999,999,999,999},   //T con char = T -> char
+         /* -> */   {9, 9, 9, -9, 999,999,999,999},   //T con int = T -> int
+        /* 20 */    {9,10, 9, -10,999,999,999,999},   //T con float = T -> float
 
                     /*segunda gramatica */
 
-                    {10,11,10,-11,-11,-1,999,999},
+                    //{10,11,10,-11,-11,-1,999,999},    F con Puts = F -> putsputs; *ERROR*
+                    {10,11,10,-11, 11 ,-1,999,999},    //F con Puts = F -> putsE;
 
-                    {11, 12, 11,-12,12,-13,999,999},
+                    {11, 12, 11,-12,12,-13,999,999},  //E con ( = E -> (E)
 
-                    {12,14,12,-14,999,999,999,999},
-                    {12, 4, 12, -4,999,999,999,999}
+                    {12,14,12,-14,999,999,999,999},   //P con cte.Lit = P -> cte. Lit
+                    {12, 4, 12, -4,999,999,999,999}   //P con id = P -> Id
 };
 
 
-int main(void)
-{
+int main(void){
     char resp;
-    do
-    {
-       // puts("Generar el Archivo (s/n) : ");
-
+    do{
         cout<<"Generar el Archivo (s/n) : ";
         //cin>>resp;
         resp = cin.get();
@@ -140,7 +136,7 @@ int main(void)
         // if(resp==0)  //NULL
         //   cin.get();
 
-        if(strchr("Ss",resp))
+        if(strchr("S/s",resp)) //SI EL USUARIO INGRESA 'S'|'s' GENERA UN ARCHIVO
             generararch();
         vabrirarch();
         numBytesArch= bytesarch();
@@ -167,7 +163,7 @@ int main(void)
         cin.get();
         printf("Presiona (sS) para continuar ? : " );
         cin>>resp;
-    }while (strchr("Ss",resp));
+    }while (strchr("S/s",resp));
 
     return 0;
 }
@@ -222,8 +218,7 @@ void generararch()
 
 }
 
-void vabrirarch()
-{
+void vabrirarch(){
     char nomArch[100];
     //char nombre[100];
     char *nombre = new char[100];
@@ -495,6 +490,7 @@ void vanalisislexico()
                 iniToken=indice;
                 viniedos();
                 break;
+           /*IMPLEMENTAR LAS LLAVES AQUÍ*/
 
         }/*switch*/
     } /*while*/
